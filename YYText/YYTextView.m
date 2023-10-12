@@ -634,6 +634,15 @@ typedef NS_ENUM(NSUInteger, YYTextMoveDirection) {
         }
     }
     
+    if ([self.delegate respondsToSelector:@selector(textViewDidBeginSelect:)]) {
+        [self.delegate textViewDidBeginSelect:self];
+    }
+    
+    if (_disableSelectableMenu) {
+        _state.showingMenu = YES;
+        return;
+    }
+    
     if (self.isFirstResponder || _containerView.isFirstResponder) {
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.01 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             UIMenuController *menu = [UIMenuController sharedMenuController];
@@ -651,9 +660,15 @@ typedef NS_ENUM(NSUInteger, YYTextMoveDirection) {
 - (void)_hideMenu {
     if (_state.showingMenu) {
         _state.showingMenu = NO;
-        UIMenuController *menu = [UIMenuController sharedMenuController];
-        [menu setMenuVisible:NO animated:YES];
+        if ([self.delegate respondsToSelector:@selector(textViewDidEndSelect:)]) {
+           [self.delegate textViewDidEndSelect:self];
+       }
+       if (_disableSelectableMenu == NO) {
+           UIMenuController *menu = [UIMenuController sharedMenuController];
+           [menu setMenuVisible:NO animated:YES];
+       }
     }
+    
     if (_containerView.isFirstResponder) {
         _state.ignoreFirstResponder = YES;
         [_containerView resignFirstResponder]; // it will call [self becomeFirstResponder], ignore it temporary.
@@ -1282,6 +1297,11 @@ typedef NS_ENUM(NSUInteger, YYTextMoveDirection) {
         }
     }
     return NO;
+}
+
+- (NSString *)selectedText {
+    NSString *string = [_innerText yy_plainTextForRange:_trackingRange.asRange];
+    return string;
 }
 
 /// Save current selected attributed text to pasteboard.
@@ -1949,6 +1969,9 @@ typedef NS_ENUM(NSUInteger, YYTextMoveDirection) {
     [super setDelegate:self];
     
     _text = @"";
+    
+    _disableSelectableMenu = NO;
+    
     _attributedText = [NSAttributedString new];
     
     // UITextInputTraits
@@ -2891,6 +2914,23 @@ typedef NS_ENUM(NSUInteger, YYTextMoveDirection) {
     if (_markedTextRange) {
         [self unmarkText];
     }
+}
+
+- (void)endSelected {
+    if (_markedTextRange) {
+        _markedTextRange = nil;
+        [self _parseText];
+        [self _setText:[_innerText yy_plainTextForRange:NSMakeRange(0, _innerText.length)]];
+    }
+    _state.selectedWithoutEdit = NO;
+    if ([self _shouldDetectText]) {
+        [self _update];
+    }
+    [self _endTouchTracking];
+    [self _hideMenu];
+    [self _updateIfNeeded];
+    [self _updateSelectionView];
+    [self _restoreInsetsAnimated:YES];
 }
 
 #pragma mark - Override NSObject(UIResponderStandardEditActions)
