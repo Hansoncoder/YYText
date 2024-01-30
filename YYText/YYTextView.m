@@ -3868,3 +3868,15 @@ typedef NS_ENUM(NSUInteger, YYTextMoveDirection) {
 }
 
 @end
+
+@implementation YYTextView (InnerFunction)
+
+- (YYTextHighlight *)getHighlightAtPoint:(CGPoint)point range:(NSRangePointer)range {
+    return [self _getHighlightAtPoint:point range:range];
+}
+
+- (UIView *)containerView {
+    return _containerView;
+}
+
+@end
