@@ -419,7 +419,7 @@ UIKIT_EXTERN NSString *const YYTextViewTextDidEndEditingNotification;
 @interface YYTextView (InnerFunction)
 - (UIView *)containerView;
 
-- (YYTextHighlight *)getHighlightAtPoint:(CGPoint)point range:(NSRangePointer)range;
+- (nullable YYTextHighlight *)getHighlightAtPoint:(CGPoint)point range:(nullable NSRangePointer)range;
 
 @end
 
